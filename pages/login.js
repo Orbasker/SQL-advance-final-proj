@@ -30,7 +30,7 @@ export default function LoginPage() {
         router.push("/dashboard");
     };
     
-    const handleCreateUser = async (e) => {
+    const handleUserRegistration = async (e) => {
         e.preventDefault();
         setError(null);
     
@@ -94,7 +94,7 @@ export default function LoginPage() {
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
                     <h2 className="text-xl font-bold mb-4">Create New User</h2>
                     {error && <p className="text-red-500">{error}</p>}
-                    <form onSubmit={handleCreateUser} className="space-y-4">
+                    <form onSubmit={handleUserRegistration} className="space-y-4">
                         <input
                             type="text"
                             placeholder="Username"
