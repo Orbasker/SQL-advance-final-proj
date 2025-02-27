@@ -83,16 +83,16 @@ export default function LoginPage() {
                     </button>
                 </form>
             </div>
+            <br></br>
             <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                <h2 className="text-xl font-bold mb-4">Register</h2>
                 <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
-                    + Create Account
+                    + Register
                 </button>
             </div>
 
             {showForm && (
                 <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
-                    <h2 className="text-xl font-bold mb-4">Create User</h2>
+                    <h2 className="text-xl font-bold mb-4">Create New User</h2>
                     {error && <p className="text-red-500">{error}</p>}
                     <form onSubmit={handleCreateUser} className="space-y-4">
                         <input
