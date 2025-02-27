@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { supabase, changeUserPassword, changeUserPermission } from "@/lib/supabaseClient";
+import { supabase, changeUserPassword, changeUserPermission, deleteUser } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
+//import Modal from '../components/modal'; // Adjust the path as necessary
+import '@/app/globals.css';
 
 export default function Dashboard() {
     const [users, setUsers] = useState([]);
@@ -8,6 +10,8 @@ export default function Dashboard() {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ username: "", password: "", permission: "read_only" });
     const [error, setError] = useState(null);
+    //const [modalType, setModalType] = useState(null);
+    //const [selectedUser, setSelectedUser] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -86,13 +90,64 @@ export default function Dashboard() {
         }
     };
 
+    const handleDeleteUser = async (userId) => {
+        if (!confirm("Are you sure you want to delete this user?")) return;
+    
+        console.log("📡 DEBUG: Deleting user →", userId);
+    
+        const result = await deleteUser(userId);
+    
+        if (result.error) {
+            alert("🚨 Error: " + result.error);
+        } else {
+            alert("✅ User deleted successfully!");
+            fetchUsers(); // Refresh user list
+        }
+    };
+
+    // const handleModalConfirm = async () => {
+    //     if (modalType === 'changePassword') {
+    //         const newPassword = prompt("Enter new password:");
+    //         if (!newPassword) return;
+    //         console.log("📡 DEBUG: Calling `changeUserPassword` with:", { selectedUser, newPassword });
+    //         const result = await changeUserPassword(newPassword, selectedUser);
+    //         if (result.error) {
+    //             alert("🚨 Error: " + result.error);
+    //         } else {
+    //             alert("✅ Password changed successfully!");
+    //             fetchUsers();
+    //         }
+    //     } else if (modalType === 'changePermission') {
+    //         const newPermission = prompt("Enter new permission (admin or read_only):");
+    //         if (!newPermission) return;
+    //         const result = await changeUserPermission(selectedUser, newPermission);
+    //         if (result.error) alert("Error: " + result.error);
+    //         else {
+    //             alert("Permission updated successfully!");
+    //             fetchUsers();
+    //         }
+    //     } else if (modalType === 'deleteUser') {
+    //         const result = await deleteUser(selectedUser);
+    //         if (result.error) {
+    //             alert("🚨 Error: " + result.error);
+    //         } else {
+    //             alert("✅ User deleted successfully!");
+    //             fetchUsers();
+    //         }
+    //     }
+    //     setModalType(null);
+    //     setSelectedUser(null);
+    // };
+
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">User Management</h1>
+                <br></br>
                 <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
                     + Create User
                 </button>
+                <br></br>
                 <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
                     Logout
                 </button>
@@ -133,28 +188,42 @@ export default function Dashboard() {
             )}
 
             {loading ? <p>Loading users...</p> : (
-                <table className="w-full bg-white shadow-lg rounded-lg border-collapse">
-                    <thead>
-                        <tr className="bg-gray-200">
-                            <th className="p-2 border">ID</th>
-                            <th className="p-2 border">Username</th>
-                            <th className="p-2 border">Permission</th>
-                            <th className="p-2 border">Actions</th>
+                <table className="w-full bg-white shadow-lg rounded-lg border border-gray-300 overflow-hidden">
+                    <thead className="bg-blue-600 text-white">
+                        <tr>
+                            <th className="p-3 text-left">ID</th>
+                            <th className="p-3 text-left">Username</th>
+                            <th className="p-3 text-left">Permission</th>
+                            <th className="p-3 text-center">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((user) => (
-                            console.log(user),
-                            <tr key={user.user_id} className="border-b">
-                                <td className="p-2">{user.user_id}</td>
-                                <td className="p-2">{user.username}</td>
-                                <td className="p-2">{user.permission}</td>
-                                <td className="p-2">
-                                    <button onClick={() => handleChangePassword(user.user_id)} className="bg-yellow-500 text-white px-2 py-1 rounded mr-2">
+                        {users.map((user, index) => (
+                            <tr 
+                                key={user.user_id} 
+                                className={`${index % 2 === 0 ? "bg-gray-100" : "bg-white"} hover:bg-gray-200 transition`}
+                            >
+                                <td className="p-3 border-b">{user.user_id}</td>
+                                <td className="p-3 border-b">{user.username}</td>
+                                <td className="p-3 border-b capitalize">{user.permission_type}</td>
+                                <td className="p-3 border-b flex flex-wrap justify-center gap-2">
+                                    <button 
+                                        onClick={() => handleChangePassword(user.user_id)} 
+                                        className="bg-yellow-500 text-white px-3 py-1 rounded shadow-md hover:bg-yellow-600 transition"
+                                    >
                                         Change Password
                                     </button>
-                                    <button onClick={() => handleChangePermission(user.user_id)} className="bg-purple-500 text-white px-2 py-1 rounded">
+                                    <button 
+                                        onClick={() => handleChangePermission(user.user_id)} 
+                                        className="bg-purple-500 text-white px-3 py-1 rounded shadow-md hover:bg-purple-600 transition"
+                                    >
                                         Change Permission
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteUser(user.user_id)}
+                                        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                                    >
+                                        Delete User
                                     </button>
                                 </td>
                             </tr>

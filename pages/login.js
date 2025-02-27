@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/router";
+import '@/app/globals.css';
 
 export default function LoginPage() {
     const [username, setUsername] = useState("");
@@ -56,7 +57,8 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="flex justify-center items-center h-screen bg-gray-200">
+        <div className="flex flex-col justify-center items-center h-screen bg-gray-200 space-y-4">
+            {/* Login Form */}
             <div className="bg-white p-6 rounded-lg shadow-lg w-96">
                 <h2 className="text-2xl font-bold mb-4">Login</h2>
                 {error && <p className="text-red-500">{error}</p>}
@@ -82,16 +84,16 @@ export default function LoginPage() {
                         Login
                     </button>
                 </form>
-            </div>
-            <br></br>
-            <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-                <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
+                <br></br>
+                {/* Register Button */}
+                <button onClick={() => setShowForm(true)} className="w-full bg-green-500 text-white px-4 py-2 rounded shadow">
                     + Register
                 </button>
             </div>
-
+    
+            {/* Create User Form */}
             {showForm && (
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
+                <div className="bg-white p-6 rounded-lg shadow-lg w-96">
                     <h2 className="text-xl font-bold mb-4">Create New User</h2>
                     {error && <p className="text-red-500">{error}</p>}
                     <form onSubmit={handleUserRegistration} className="space-y-4">
@@ -109,10 +111,10 @@ export default function LoginPage() {
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         />
-
+    
                         {/* Hidden input to always send "read_only" */}
                         <input type="hidden" name="permission" value="read_only" />
-
+    
                         <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
                             Create User
                         </button>
