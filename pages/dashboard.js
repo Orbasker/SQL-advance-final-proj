@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase, changeUserPassword, changeUserPermission, deleteUser } from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
-//import Modal from '../components/modal'; // Adjust the path as necessary
+import Modal from '../components/modal'; // Adjust the path as necessary
 import '@/app/globals.css';
 
 export default function Dashboard() {
@@ -10,9 +10,11 @@ export default function Dashboard() {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ username: "", password: "", permission: "read_only" });
     const [error, setError] = useState(null);
-    //const [modalType, setModalType] = useState(null);
-    //const [selectedUser, setSelectedUser] = useState(null);
+    const [modalType, setModalType] = useState(null);
+    const [selectedUser, setSelectedUser] = useState(null);
     const router = useRouter();
+    const [newPassword, setNewPassword] = useState("");
+    const [newPermission, setNewPermission] = useState("");
 
     useEffect(() => {
         fetchUsers();
@@ -62,82 +64,52 @@ export default function Dashboard() {
         fetchUsers();
     };
 
-    const handleChangePassword = async (userId) => {
-        const newPassword = prompt("Enter new password:");
-        if (!newPassword) return;
-
-        console.log("📡 DEBUG: Calling `changeUserPassword` with:", { userId, newPassword });
-
-        const result = await changeUserPassword(newPassword, userId);
-
-        if (result.error) {
-            alert("🚨 Error: " + result.error);
-        } else {
-            alert("✅ Password changed successfully!");
-        }
+    const handleChangePassword = (userId) => {
+        setSelectedUser(userId);
+        setModalType('changePassword');
+    };
+    
+    const handleChangePermission = (userId) => {
+        setSelectedUser(userId);
+        setModalType('changePermission');
+    };
+    
+    const handleDeleteUser = (userId) => {
+        setSelectedUser(userId);
+        setModalType('deleteUser');
     };
 
-
-    const handleChangePermission = async (userId) => {
-        const newPermission = prompt("Enter new permission (admin or read_only):");
-        if (!newPermission) return;
-
-        const result = await changeUserPermission(userId, newPermission);
-        if (result.error) alert("Error: " + result.error);
-        else {
-            alert("Permission updated successfully!");
-            fetchUsers();
+    const handleModalConfirm = async () => {
+        if (modalType === 'changePassword') {
+            const result = await changeUserPassword(newPassword, selectedUser);
+            if (result.error) {
+                alert("🚨 Error: " + result.error);
+            } else {
+                alert("✅ Password changed successfully!");
+                fetchUsers();
+            }
+        } else if (modalType === 'changePermission') {
+            const result = await changeUserPermission(selectedUser, newPermission);
+            if (result.error) {
+                alert("Error: " + result.error);
+            } else {
+                alert("Permission updated successfully!");
+                fetchUsers();
+            }
+        } else if (modalType === 'deleteUser') {
+            const result = await deleteUser(selectedUser);
+            if (result.error) {
+                alert("🚨 Error: " + result.error);
+            } else {
+                alert("✅ User deleted successfully!");
+                fetchUsers();
+            }
         }
+        setModalType(null);
+        setSelectedUser(null);
+        setNewPassword(""); // Reset password state
+        setNewPermission(""); // Reset permission state
     };
-
-    const handleDeleteUser = async (userId) => {
-        if (!confirm("Are you sure you want to delete this user?")) return;
-    
-        console.log("📡 DEBUG: Deleting user →", userId);
-    
-        const result = await deleteUser(userId);
-    
-        if (result.error) {
-            alert("🚨 Error: " + result.error);
-        } else {
-            alert("✅ User deleted successfully!");
-            fetchUsers(); // Refresh user list
-        }
-    };
-
-    // const handleModalConfirm = async () => {
-    //     if (modalType === 'changePassword') {
-    //         const newPassword = prompt("Enter new password:");
-    //         if (!newPassword) return;
-    //         console.log("📡 DEBUG: Calling `changeUserPassword` with:", { selectedUser, newPassword });
-    //         const result = await changeUserPassword(newPassword, selectedUser);
-    //         if (result.error) {
-    //             alert("🚨 Error: " + result.error);
-    //         } else {
-    //             alert("✅ Password changed successfully!");
-    //             fetchUsers();
-    //         }
-    //     } else if (modalType === 'changePermission') {
-    //         const newPermission = prompt("Enter new permission (admin or read_only):");
-    //         if (!newPermission) return;
-    //         const result = await changeUserPermission(selectedUser, newPermission);
-    //         if (result.error) alert("Error: " + result.error);
-    //         else {
-    //             alert("Permission updated successfully!");
-    //             fetchUsers();
-    //         }
-    //     } else if (modalType === 'deleteUser') {
-    //         const result = await deleteUser(selectedUser);
-    //         if (result.error) {
-    //             alert("🚨 Error: " + result.error);
-    //         } else {
-    //             alert("✅ User deleted successfully!");
-    //             fetchUsers();
-    //         }
-    //     }
-    //     setModalType(null);
-    //     setSelectedUser(null);
-    // };
 
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
@@ -151,6 +123,46 @@ export default function Dashboard() {
                 <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
                     Logout
                 </button>
+                <Modal
+                    isOpen={modalType !== null}
+                    onClose={() => {
+                        setModalType(null);
+                        setNewPassword("");
+                        setNewPermission("");
+                        setSelectedUser(null);
+                    }}
+                    title={modalType === 'changePassword' ? "Change Password" : modalType === 'changePermission' ? "Change Permission" : "Delete User"}
+                    onConfirm={handleModalConfirm}
+                >
+                    {modalType === 'changePassword' && (
+                        <div>
+                            <input
+                                type="password"
+                                placeholder="New Password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full p-2 border rounded mb-2"
+                            />
+                            <p>Are you sure you want to change the password?</p>
+                        </div>
+                    )}
+                    {modalType === 'changePermission' && (
+                        <div>
+                            <select
+                                value={newPermission}
+                                onChange={(e) => setNewPermission(e.target.value)}
+                                className="w-full p-2 border rounded mb-2"
+                            >
+                                <option value="read_only">Read Only</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                            <p>Are you sure you want to change the permission?</p>
+                        </div>
+                    )}
+                    {modalType === 'deleteUser' && (
+                        <p>Are you sure you want to delete this user?</p>
+                    )}
+                </Modal>
             </div>
 
             {showForm && (
