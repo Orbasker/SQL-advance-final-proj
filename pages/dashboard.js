@@ -17,7 +17,13 @@ export default function Dashboard() {
     const [newPermission, setNewPermission] = useState("");
 
     useEffect(() => {
-        fetchUsers();
+        const session = JSON.parse(localStorage.getItem("user"));
+
+        if (!session) {
+            router.replace("/login"); // Redirect to login if not authenticated
+        } else {
+            fetchUsers();
+        }
     }, []);
 
     const fetchUsers = async () => {
