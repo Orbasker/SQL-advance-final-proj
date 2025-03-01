@@ -178,6 +178,7 @@ export default function Dashboard() {
         <div className="p-8 bg-gray-100 min-h-screen">
             <div className="flex flex-col justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">User Management</h1>
+                <p className="text-lg mt-4">Welcome, {session?.username}!</p> {/* Display the username here */}
                 <br />
                 {/* 
                 {session?.permission === "admin" && (
