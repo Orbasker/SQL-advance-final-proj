@@ -16,16 +16,17 @@ export default function Dashboard() {
     const router = useRouter();
     const [newPassword, setNewPassword] = useState("");
     const [newPermission, setNewPermission] = useState("");
-
+    const [currentUserId, setCurrentUserId] = useState(null);
+    
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-
+    
         if (!storedUser) {
             console.error("🚨 No user found in localStorage. Redirecting...");
             router.replace("/login");
             return;
         }
-
+    
         try {
             const parsedSession = JSON.parse(storedUser);
             if (!parsedSession.permission) {
@@ -33,9 +34,12 @@ export default function Dashboard() {
                 router.replace("/login");
                 return;
             }
-
+    
             setSession(parsedSession); // ✅ Store session state
-
+    
+            // Set currentUserId from the parsed session
+            setCurrentUserId(parsedSession.userId);
+    
             if (parsedSession.permission === "admin") {
                 fetchUsers(); // Admin fetches all users
             } else {
@@ -84,24 +88,31 @@ export default function Dashboard() {
     const handleCreateUser = async (e) => {
         e.preventDefault();
         setError(null);
-
-        if (!formData.username || !formData.password) {
-            setError("All fields are required!");
+    
+        if (!formData.username || !formData.password || !adminId) {
+            setError("All fields and admin ID are required!");
             return;
         }
-
+    
+        const payload = {
+            username: formData.username,
+            password: formData.password,
+            permission: formData.permission || "read_only",
+            performed_by: adminId,  // ✅ Logs who created the user
+        };
+    
         const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(formData),
+            body: JSON.stringify(payload),
         });
-
+    
         const result = await response.json();
         if (!response.ok) {
             setError(result.error?.message || "Failed to create user.");
             return;
         }
-
+    
         setShowForm(false);
         setFormData({ username: "", password: "", permission: "read_only" });
         fetchUsers();
@@ -123,8 +134,13 @@ export default function Dashboard() {
     };
 
     const handleModalConfirm = async () => {
+        if (!currentUserId) {
+            alert("🚨 Error: Unable to determine current user.");
+            return;
+        }
+    
         if (modalType === 'changePassword') {
-            const result = await changeUserPassword(newPassword, selectedUser);
+            const result = await changeUserPassword(newPassword, selectedUser, currentUserId);
             if (result.error) {
                 alert("🚨 Error: " + result.error);
             } else {
@@ -132,15 +148,15 @@ export default function Dashboard() {
                 fetchUsers();
             }
         } else if (modalType === 'changePermission') {
-            const result = await changeUserPermission(selectedUser, newPermission);
+            const result = await changeUserPermission(selectedUser, newPermission, currentUserId);
             if (result.error) {
-                alert("Error: " + result.error);
+                alert("🚨 Error: " + result.error);
             } else {
-                alert("Permission updated successfully!");
+                alert("✅ Permission updated successfully!");
                 fetchUsers();
             }
         } else if (modalType === 'deleteUser') {
-            const result = await deleteUser(selectedUser);
+            const result = await deleteUser(selectedUser, currentUserId);
             if (result.error) {
                 alert("🚨 Error: " + result.error);
             } else {
@@ -148,6 +164,7 @@ export default function Dashboard() {
                 fetchUsers();
             }
         }
+    
         setModalType(null);
         setSelectedUser(null);
         setNewPassword("");
