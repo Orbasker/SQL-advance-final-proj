@@ -12,23 +12,63 @@ export default function Dashboard() {
     const [error, setError] = useState(null);
     const [modalType, setModalType] = useState(null);
     const [selectedUser, setSelectedUser] = useState(null);
+    const [session, setSession] = useState(null); // ✅ Store logged-in user session
     const router = useRouter();
     const [newPassword, setNewPassword] = useState("");
     const [newPermission, setNewPermission] = useState("");
 
     useEffect(() => {
-        const session = JSON.parse(localStorage.getItem("user"));
+        const storedUser = localStorage.getItem("user");
 
-        if (!session) {
-            router.replace("/login"); // Redirect to login if not authenticated
-        } else {
-            fetchUsers();
+        if (!storedUser) {
+            console.error("🚨 No user found in localStorage. Redirecting...");
+            router.replace("/login");
+            return;
+        }
+
+        try {
+            const parsedSession = JSON.parse(storedUser);
+            if (!parsedSession.permission) {
+                console.error("🚨 Permission is undefined. Redirecting...");
+                router.replace("/login");
+                return;
+            }
+
+            setSession(parsedSession); // ✅ Store session state
+
+            if (parsedSession.permission === "admin") {
+                fetchUsers(); // Admin fetches all users
+            } else {
+                fetchUserData(parsedSession.username); // Read-only user fetches own data
+            }
+        } catch (error) {
+            console.error("🚨 Error parsing user data:", error);
+            localStorage.removeItem("user");
+            router.replace("/login");
         }
     }, []);
 
+    const fetchUserData = async (username) => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from("user_permissions")
+                .select("user_id, username, permission_type")
+                .eq('username', username) // Fetch only logged-in user
+                .single();
+            
+            if (error) throw error;
+
+            setUsers([data]); // Store user data
+        } catch (error) {
+            console.error("🚨 Fetch User Data Error:", error.message || error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const fetchUsers = async () => {
         setLoading(true);
-
         const { data, error } = await supabase
             .from('user_permissions')
             .select('user_id, username, permission_type');
@@ -38,11 +78,8 @@ export default function Dashboard() {
         } else {
             setUsers(data);
         }
-
         setLoading(false);
     };
-
-
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
@@ -113,19 +150,21 @@ export default function Dashboard() {
         }
         setModalType(null);
         setSelectedUser(null);
-        setNewPassword(""); // Reset password state
-        setNewPermission(""); // Reset permission state
+        setNewPassword("");
+        setNewPermission("");
     };
 
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
             <div className="flex flex-col justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">User Management</h1>
-                <br></br>
-                <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
-                    + Create User
-                </button>
-                <br></br>
+                <br />
+                {session?.permission === "admin" && (
+                    <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
+                        + Create User
+                    </button>
+                )}
+                <br />
                 <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
                     Logout
                 </button>
@@ -165,45 +204,9 @@ export default function Dashboard() {
                             <p>Are you sure you want to change the permission?</p>
                         </div>
                     )}
-                    {modalType === 'deleteUser' && (
-                        <p>Are you sure you want to delete this user?</p>
-                    )}
+                    {modalType === 'deleteUser' && <p>Are you sure you want to delete this user?</p>}
                 </Modal>
             </div>
-
-            {showForm && (
-                <div className="bg-white p-6 rounded-lg shadow-lg max-w-lg mx-auto">
-                    <h2 className="text-xl font-bold mb-4">Create User</h2>
-                    {error && <p className="text-red-500">{error}</p>}
-                    <form onSubmit={handleCreateUser} className="space-y-4">
-                        <input
-                            type="text"
-                            placeholder="Username"
-                            className="w-full p-2 border rounded"
-                            value={formData.username}
-                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                        />
-                        <input
-                            type="password"
-                            placeholder="Password"
-                            className="w-full p-2 border rounded"
-                            value={formData.password}
-                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                        />
-                        <select
-                            className="w-full p-2 border rounded"
-                            value={formData.permission}
-                            onChange={(e) => setFormData({ ...formData, permission: e.target.value })}
-                        >
-                            <option value="read_only">Read Only</option>
-                            <option value="admin">Admin</option>
-                        </select>
-                        <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">
-                            Create User
-                        </button>
-                    </form>
-                </div>
-            )}
 
             {loading ? <p>Loading users...</p> : (
                 <table className="w-full bg-white shadow-lg rounded-lg border border-gray-300 overflow-hidden">
@@ -216,33 +219,25 @@ export default function Dashboard() {
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map((user, index) => (
-                            <tr 
-                                key={user.user_id} 
-                                className={`${index % 2 === 0 ? "bg-gray-100" : "bg-white"} hover:bg-gray-200 transition`}
-                            >
-                                <td className="p-3 border-b">{user.user_id}</td>
-                                <td className="p-3 border-b">{user.username}</td>
-                                <td className="p-3 border-b capitalize">{user.permission_type}</td>
+                        {users.map((userItem) => (
+                            <tr key={userItem.user_id} className="hover:bg-gray-200 transition">
+                                <td className="p-3 border-b">{userItem.user_id}</td>
+                                <td className="p-3 border-b">{userItem.username}</td>
+                                <td className="p-3 border-b capitalize">{userItem.permission_type}</td>
                                 <td className="p-3 border-b flex flex-wrap justify-center gap-2">
-                                    <button 
-                                        onClick={() => handleChangePassword(user.user_id)} 
-                                        className="bg-yellow-500 text-white px-3 py-1 rounded shadow-md hover:bg-yellow-600 transition"
-                                    >
+                                    <button onClick={() => handleChangePassword(userItem.user_id)} className="bg-yellow-500 text-white px-3 py-1 rounded shadow-md hover:bg-yellow-600 transition">
                                         Change Password
                                     </button>
-                                    <button 
-                                        onClick={() => handleChangePermission(user.user_id)} 
-                                        className="bg-purple-500 text-white px-3 py-1 rounded shadow-md hover:bg-purple-600 transition"
-                                    >
-                                        Change Permission
-                                    </button>
-                                    <button
-                                        onClick={() => handleDeleteUser(user.user_id)}
-                                        className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                    >
-                                        Delete User
-                                    </button>
+                                    {session.permission === "admin" && (
+                                        <button onClick={() => handleChangePermission(userItem.user_id)} className="bg-purple-500 text-white px-3 py-1 rounded shadow-md hover:bg-purple-600 transition">
+                                            Change Permission
+                                        </button>
+                                    )}
+                                    {(session.permission === "admin" || session.userId === userItem.user_id) && (
+                                        <button onClick={() => handleDeleteUser(userItem.user_id)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">
+                                            Delete User
+                                        </button>
+                                    )}
                                 </td>
                             </tr>
                         ))}

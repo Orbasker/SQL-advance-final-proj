@@ -13,23 +13,30 @@ export default function LoginPage() {
 
     const handleLogin = async (e) => {
         e.preventDefault();
-
+    
         const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ username, password }),
         });
-
+    
         const result = await response.json();
-
+    
         if (!response.ok) {
             setError(result.error || "Invalid username or password.");
             return;
         }
-
-        localStorage.setItem("user", JSON.stringify(result));
+        
+        // ✅ Store full user data, including permission
+        localStorage.setItem("user", JSON.stringify({
+            userId: result.userId,
+            username: result.username,
+            permission: result.permission,
+        }));
+    
         router.push("/dashboard");
     };
+    
     
     const handleUserRegistration = async (e) => {
         e.preventDefault();
