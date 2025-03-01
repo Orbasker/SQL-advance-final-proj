@@ -15,7 +15,7 @@ export default function Dashboard() {
     const [session, setSession] = useState(null); // ✅ Store logged-in user session
     const router = useRouter();
     const [newPassword, setNewPassword] = useState("");
-    const [newPermission, setNewPermission] = useState("");
+    const [newPermission, setNewPermission] = useState("read_only");
     const [currentUserId, setCurrentUserId] = useState(null);
 
     useEffect(() => {
@@ -149,6 +149,7 @@ export default function Dashboard() {
                 fetchUsers();
             }
         } else if (modalType === 'changePermission') {
+            if(!newPermission) {setNewPermission("read_only");}
             const result = await changeUserPermission(selectedUser, newPermission, currentUserId);
             if (result.error) {
                 alert("🚨 Error: " + result.error);
