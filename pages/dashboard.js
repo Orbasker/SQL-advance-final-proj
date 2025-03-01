@@ -150,7 +150,7 @@ export default function Dashboard() {
                 fetchUsers();
             }
         } else if (modalType === 'changePermission') {
-            if (!newPermission) { setNewPermission("read_only"); }
+            if(newPermission != "read_only" || newPermission != "admin") {setNewPermission("read_only");}
             const result = await changeUserPermission(selectedUser, newPermission, currentUserId);
             if (result.error) {
                 alert("🚨 Error: " + result.error);
@@ -171,13 +171,14 @@ export default function Dashboard() {
         setModalType(null);
         setSelectedUser(null);
         setNewPassword("");
-        setNewPermission("");
+        setNewPermission("read_only");
     };
 
     return (
         <div className="p-8 bg-gray-100 min-h-screen">
             <div className="flex flex-col justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">User Management</h1>
+                <p className="text-lg mt-4">Welcome, {session?.username}!</p> {/* Display the username here */}
                 <br />
                 {session?.permission === "admin" && (
                     <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
@@ -272,7 +273,7 @@ export default function Dashboard() {
                     {modalType === 'changePermission' && (
                         <div>
                             <select
-                                value={newPermission}
+                                value={newPermission} // Controlled value
                                 onChange={(e) => setNewPermission(e.target.value)}
                                 className="w-full p-2 border rounded mb-2"
                             >
