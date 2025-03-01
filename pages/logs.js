@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { createClient } from '@supabase/supabase-js';
+import Navbar from "@/components/Navbar";
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -40,37 +41,39 @@ const LogsPage = () => {
         }
 
         const fetchLogs = async () => {
-            console.log("Fetching logs for user:", user.id);
+            console.log("Fetching logs for user:", user.userId);
+
             setLoading(true);
 
+            // Fetch user role from user_permissions instead of users
             const { data: userData, error: userError } = await supabase
-                .from('users')
-                .select('id, role')
-                .eq('id', user.id)
+                .from('user_permissions') // ✅ Correct table
+                .select('permission_type') // ✅ Fetch role correctly
+                .eq('user_id', user.userId) // ✅ Use correct user ID field
                 .single();
 
             if (userError) {
-                console.error("Error fetching user role:", userError.message);
+                console.error("🚨 Error fetching user role:", userError.message);
                 setLoading(false);
                 return;
             }
 
-            console.log("User role fetched:", userData);
+            console.log("✅ User role fetched:", userData);
 
             try {
-                const response = await fetch(`/api/logs?userId=${user.id}&role=${userData.role}`);
+                const response = await fetch(`/api/logs?userId=${user.userId}&role=${userData.permission_type}`);
                 const logsData = await response.json();
 
                 if (!response.ok) {
-                    console.error("Error fetching logs from API:", logsData);
+                    console.error("🚨 Error fetching logs from API:", logsData);
                     setLoading(false);
                     return;
                 }
 
-                console.log("Logs fetched:", logsData);
+                console.log("✅ Logs fetched:", logsData);
                 setLogs(logsData);
             } catch (fetchError) {
-                console.error("Network error while fetching logs:", fetchError);
+                console.error("🚨 Network error while fetching logs:", fetchError);
             }
 
             setLoading(false);
@@ -78,6 +81,7 @@ const LogsPage = () => {
 
         fetchLogs();
     }, [user]);
+
 
     if (loading) {
         console.log("Loading state active...");
@@ -87,6 +91,7 @@ const LogsPage = () => {
     return (
         <div className="container mx-auto p-4">
             <h1 className="text-2xl font-bold mb-4">Logs</h1>
+            <Navbar session={user} />
             <table className="table-auto w-full border-collapse border border-gray-200">
                 <thead>
                     <tr className="bg-gray-100">

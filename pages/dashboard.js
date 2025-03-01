@@ -3,6 +3,7 @@ import { supabase, changeUserPassword, changeUserPermission, deleteUser } from "
 import { useRouter } from "next/router";
 import Modal from '../components/modal'; // Adjust the path as necessary
 import '@/app/globals.css';
+import Navbar from "@/components/Navbar";
 
 export default function Dashboard() {
     const [users, setUsers] = useState([]);
@@ -89,7 +90,7 @@ export default function Dashboard() {
         e.preventDefault();
         setError(null);
 
-    
+
         if (!formData.username || !formData.password || !currentUserId) {
             setError("All fields and admin ID are required!");
             return;
@@ -178,6 +179,7 @@ export default function Dashboard() {
             <div className="flex flex-col justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">User Management</h1>
                 <br />
+                {/* 
                 {session?.permission === "admin" && (
                     <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
                         + Create User
@@ -243,7 +245,7 @@ export default function Dashboard() {
                     className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition"
                 >
                     View Logs
-                </button>
+                </button> */}
 
                 <Modal
                     isOpen={modalType !== null}
@@ -284,6 +286,7 @@ export default function Dashboard() {
                     {modalType === 'deleteUser' && <p>Are you sure you want to delete this user?</p>}
                 </Modal>
             </div>
+            <Navbar session={session} />
 
             {loading ? <p>Loading users...</p> : (
                 <table className="w-full bg-white shadow-lg rounded-lg border border-gray-300 overflow-hidden">
