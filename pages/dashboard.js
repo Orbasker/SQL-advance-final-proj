@@ -17,16 +17,16 @@ export default function Dashboard() {
     const [newPassword, setNewPassword] = useState("");
     const [newPermission, setNewPermission] = useState("");
     const [currentUserId, setCurrentUserId] = useState(null);
-    
+
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
-    
+
         if (!storedUser) {
             console.error("🚨 No user found in localStorage. Redirecting...");
             router.replace("/login");
             return;
         }
-    
+
         try {
             const parsedSession = JSON.parse(storedUser);
             if (!parsedSession.permission) {
@@ -34,12 +34,12 @@ export default function Dashboard() {
                 router.replace("/login");
                 return;
             }
-    
+
             setSession(parsedSession); // ✅ Store session state
-    
+
             // Set currentUserId from the parsed session
             setCurrentUserId(parsedSession.userId);
-    
+
             if (parsedSession.permission === "admin") {
                 fetchUsers(); // Admin fetches all users
             } else {
@@ -60,7 +60,7 @@ export default function Dashboard() {
                 .select("user_id, username, permission_type")
                 .eq('username', username) // Fetch only logged-in user
                 .single();
-            
+
             if (error) throw error;
 
             setUsers([data]); // Store user data
@@ -88,31 +88,31 @@ export default function Dashboard() {
     const handleCreateUser = async (e) => {
         e.preventDefault();
         setError(null);
-    
+
         if (!formData.username || !formData.password || !adminId) {
             setError("All fields and admin ID are required!");
             return;
         }
-    
+
         const payload = {
             username: formData.username,
             password: formData.password,
             permission: formData.permission || "read_only",
             performed_by: adminId,  // ✅ Logs who created the user
         };
-    
+
         const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
-    
+
         const result = await response.json();
         if (!response.ok) {
             setError(result.error?.message || "Failed to create user.");
             return;
         }
-    
+
         setShowForm(false);
         setFormData({ username: "", password: "", permission: "read_only" });
         fetchUsers();
@@ -122,12 +122,12 @@ export default function Dashboard() {
         setSelectedUser(userId);
         setModalType('changePassword');
     };
-    
+
     const handleChangePermission = (userId) => {
         setSelectedUser(userId);
         setModalType('changePermission');
     };
-    
+
     const handleDeleteUser = (userId) => {
         setSelectedUser(userId);
         setModalType('deleteUser');
@@ -138,7 +138,7 @@ export default function Dashboard() {
             alert("🚨 Error: Unable to determine current user.");
             return;
         }
-    
+
         if (modalType === 'changePassword') {
             const result = await changeUserPassword(newPassword, selectedUser, currentUserId);
             if (result.error) {
@@ -164,7 +164,7 @@ export default function Dashboard() {
                 fetchUsers();
             }
         }
-    
+
         setModalType(null);
         setSelectedUser(null);
         setNewPassword("");
@@ -185,6 +185,13 @@ export default function Dashboard() {
                 <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
                     Logout
                 </button>
+                <button
+                    onClick={() => router.push("/logs")}
+                    className="bg-blue-500 text-white px-4 py-2 rounded shadow hover:bg-blue-600 transition"
+                >
+                    View Logs
+                </button>
+
                 <Modal
                     isOpen={modalType !== null}
                     onClose={() => {
