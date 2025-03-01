@@ -150,7 +150,7 @@ export default function Dashboard() {
                 fetchUsers();
             }
         } else if (modalType === 'changePermission') {
-            if(!newPermission) {setNewPermission("read_only");}
+            if (!newPermission) { setNewPermission("read_only"); }
             const result = await changeUserPermission(selectedUser, newPermission, currentUserId);
             if (result.error) {
                 alert("🚨 Error: " + result.error);
@@ -179,7 +179,6 @@ export default function Dashboard() {
             <div className="flex flex-col justify-between items-center mb-6">
                 <h1 className="text-3xl font-bold">User Management</h1>
                 <br />
-                {/* 
                 {session?.permission === "admin" && (
                     <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
                         + Create User
@@ -237,7 +236,7 @@ export default function Dashboard() {
                     </form>
                 )}
                 <br />
-                <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
+                {/* <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
                     Logout
                 </button>
                 <button
