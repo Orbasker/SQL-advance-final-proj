@@ -180,7 +180,6 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-bold">User Management</h1>
                 <p className="text-lg mt-4">Welcome, {session?.username}!</p> {/* Display the username here */}
                 <br />
-                {/* 
                 {session?.permission === "admin" && (
                     <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
                         + Create User
@@ -238,7 +237,7 @@ export default function Dashboard() {
                     </form>
                 )}
                 <br />
-                <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
+                {/* <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
                     Logout
                 </button>
                 <button
