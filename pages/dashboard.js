@@ -150,7 +150,7 @@ export default function Dashboard() {
                 fetchUsers();
             }
         } else if (modalType === 'changePermission') {
-            if(!newPermission) {setNewPermission("read_only");}
+            if(newPermission != "read_only" || newPermission != "admin") {setNewPermission("read_only");}
             const result = await changeUserPermission(selectedUser, newPermission, currentUserId);
             if (result.error) {
                 alert("🚨 Error: " + result.error);
@@ -171,7 +171,7 @@ export default function Dashboard() {
         setModalType(null);
         setSelectedUser(null);
         setNewPassword("");
-        setNewPermission("");
+        setNewPermission("read_only");
     };
 
     return (
@@ -274,7 +274,7 @@ export default function Dashboard() {
                     {modalType === 'changePermission' && (
                         <div>
                             <select
-                                value={newPermission}
+                                value={newPermission} // Controlled value
                                 onChange={(e) => setNewPermission(e.target.value)}
                                 className="w-full p-2 border rounded mb-2"
                             >
