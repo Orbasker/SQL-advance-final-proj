@@ -89,7 +89,8 @@ export default function Dashboard() {
         e.preventDefault();
         setError(null);
 
-        if (!formData.username || !formData.password || !adminId) {
+    
+        if (!formData.username || !formData.password || !currentUserId) {
             setError("All fields and admin ID are required!");
             return;
         }
@@ -98,7 +99,7 @@ export default function Dashboard() {
             username: formData.username,
             password: formData.password,
             permission: formData.permission || "read_only",
-            performed_by: adminId,  // ✅ Logs who created the user
+            performed_by: currentUserId,  // ✅ Logs who created the user
         };
 
         const response = await fetch("/api/auth/register", {
@@ -180,6 +181,57 @@ export default function Dashboard() {
                     <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
                         + Create User
                     </button>
+                )}
+                {showForm && (
+                    <form onSubmit={handleCreateUser} className="bg-white p-4 rounded-lg shadow-lg">
+                        <div className="mb-4">
+                            <label htmlFor="username" className="block text-sm font-semibold text-gray-700">Username</label>
+                            <input
+                                type="text"
+                                id="username"
+                                value={formData.username}
+                                onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                required
+                                className="w-full p-2 border rounded"
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700">Password</label>
+                            <input
+                                type="password"
+                                id="password"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                required
+                                className="w-full p-2 border rounded"
+                            />
+                        </div>
+                        <div className="mb-4">
+                            <label htmlFor="permission" className="block text-sm font-semibold text-gray-700">Permission</label>
+                            <select
+                                id="permission"
+                                value={formData.permission}
+                                onChange={(e) => setFormData({ ...formData, permission: e.target.value })}
+                                className="w-full p-2 border rounded"
+                            >
+                                <option value="read_only">Read Only</option>
+                                <option value="admin">Admin</option>
+                            </select>
+                        </div>
+                        {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
+                        <div className="flex justify-between">
+                            <button type="submit" className="bg-green-500 text-white px-4 py-2 rounded shadow">
+                                Create User
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setShowForm(false)}
+                                className="bg-gray-500 text-white px-4 py-2 rounded shadow"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
                 )}
                 <br />
                 <button onClick={() => { localStorage.removeItem("user"); router.push("/login"); }} className="bg-red-500 text-white px-4 py-2 rounded">
