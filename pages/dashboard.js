@@ -180,11 +180,6 @@ export default function Dashboard() {
                 <h1 className="text-3xl font-bold">User Management</h1>
                 <p className="text-lg mt-4">Welcome, {session?.username}!</p> {/* Display the username here */}
                 <br />
-                {session?.permission === "admin" && (
-                    <button onClick={() => setShowForm(true)} className="bg-green-500 text-white px-4 py-2 rounded shadow">
-                        + Create User
-                    </button>
-                )}
                 {showForm && (
                     <form onSubmit={handleCreateUser} className="bg-white p-4 rounded-lg shadow-lg">
                         <div className="mb-4">

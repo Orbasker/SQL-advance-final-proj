@@ -108,7 +108,7 @@ export default function Navbar() {
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 required
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border rounded text-black"
                             />
                         </div>
                         <div className="mb-4">
@@ -119,7 +119,7 @@ export default function Navbar() {
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                                 required
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border rounded text-black"
                             />
                         </div>
                         <div className="mb-4">
@@ -128,7 +128,7 @@ export default function Navbar() {
                                 id="permission"
                                 value={formData.permission}
                                 onChange={(e) => setFormData({ ...formData, permission: e.target.value })}
-                                className="w-full p-2 border rounded"
+                                className="w-full p-2 border rounded text-black"
                             >
                                 <option value="read_only">Read Only</option>
                                 <option value="admin">Admin</option>
