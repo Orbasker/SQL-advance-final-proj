@@ -147,7 +147,6 @@ export default function Dashboard() {
                 alert("🚨 Error: " + result.error);
             } else {
                 alert("✅ Password changed successfully!");
-                fetchUsers();
             }
         } else if (modalType === 'changePermission') {
             if(newPermission != "read_only" || newPermission != "admin") {setNewPermission("read_only");}
