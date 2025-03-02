@@ -34,7 +34,7 @@ export default async function handler(req, res) {
     // Fetch logs based on user role
     let query = supabase
         .from('logs')
-        .select('id, user_id, action, timestamp')
+        .select('id, user_id, action, timestamp,custom_fields')
         .order('timestamp', { ascending: false });
 
     if (role === 'read_only') {
