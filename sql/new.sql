@@ -15,8 +15,17 @@ BEGIN
     WHERE id = _user_id;
 
     -- Log the password change
-    INSERT INTO public.logs (user_id, action)
-    VALUES (_performed_by, 'Changed password of user ' || _user_id);
+    INSERT INTO public.logs (user_id, action, custom_fields)
+    VALUES (
+        _performed_by, 
+        'Changed password of user ' || _user_id,
+        jsonb_build_object(
+            'action', 'change password',
+            'affectedUser', _user_id,
+            'performedBy', _performed_by,
+            'timestamp', NOW()
+        )
+    );
 
     RETURN 'Success: Password updated successfully';
 END;
@@ -27,6 +36,8 @@ CREATE OR REPLACE FUNCTION update_permissions_new(
     _new_permission TEXT,
     _performed_by UUID  -- Accept admin ID
 ) RETURNS JSON AS $$
+DECLARE
+    _log_id INT;
 BEGIN
     -- Ensure user exists
     IF NOT EXISTS (SELECT 1 FROM public.users WHERE id = _user_id) THEN
@@ -40,13 +51,23 @@ BEGIN
         WHERE user_id = _user_id
         RETURNING user_id
     )
-    INSERT INTO public.permissions (user_id, permission_type)
-    SELECT _user_id, _new_permission
+    INSERT INTO public.permissions (user_id, permission_type, granted_at)
+    SELECT _user_id, _new_permission, NOW()
     WHERE NOT EXISTS (SELECT 1 FROM upsert_cte);
 
     -- Log the action
-    INSERT INTO public.logs (user_id, action)
-    VALUES (_performed_by, 'Changed permissions of user ' || _user_id || ' to ' || _new_permission);
+    INSERT INTO public.logs (user_id, action, custom_fields)
+    VALUES (
+        _performed_by,
+        'Changed permissions of user ' || _user_id || ' to ' || _new_permission,
+        jsonb_build_object(
+            'action', 'update permissions',
+            'affectedUser', _user_id,
+            'newPermission', _new_permission,
+            'performedBy', _performed_by,
+            'timestamp', NOW()
+        )
+    ) RETURNING id INTO _log_id;
 
     -- Return success message as JSON
     RETURN json_build_object('success', 'Permission updated successfully');
@@ -59,6 +80,7 @@ CREATE OR REPLACE FUNCTION delete_user_new(
 ) RETURNS JSON AS $$
 DECLARE
     _exists BOOLEAN;
+    _log_id INT;
 BEGIN
     -- Check if user exists
     SELECT EXISTS (SELECT 1 FROM users WHERE id = _user_id) INTO _exists;
@@ -73,10 +95,56 @@ BEGIN
     DELETE FROM users WHERE id = _user_id;
 
     -- Log the action
-    INSERT INTO public.logs (user_id, action)
-    VALUES (_performed_by, 'Deleted user ' || _user_id);
+    INSERT INTO public.logs (user_id, action, custom_fields)
+    VALUES (
+        _performed_by,
+        'Deleted user ' || _user_id,
+        jsonb_build_object(
+            'action', 'delete user',
+            'affectedUser', _user_id,
+            'performedBy', _performed_by,
+            'timestamp', NOW()
+        )
+    ) RETURNING id INTO _log_id;
 
     -- Return success message
     RETURN json_build_object('success', 'User deleted successfully');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION create_user(
+    _username TEXT, 
+    _password TEXT, 
+    _permission TEXT
+) RETURNS UUID AS $$
+DECLARE 
+    _user_id UUID;
+    _log_id INT;
+BEGIN
+    -- Insert new user
+    INSERT INTO users (username, password)
+    VALUES (_username, crypt(_password, gen_salt('bf')))
+    RETURNING id INTO _user_id;
+
+    -- Assign initial permission
+    INSERT INTO permissions (user_id, permission_type)
+    VALUES (_user_id, _permission);
+
+    -- Log the action with JSON metadata
+    INSERT INTO logs (user_id, action, custom_fields)
+    VALUES (
+        _user_id,
+        'User Created',
+        jsonb_build_object(
+            'action', 'create user',
+            'affectedUser', _user_id,
+            'username', _username,
+            'assignedPermission', _permission,
+            'timestamp', NOW()
+        )
+    ) RETURNING id INTO _log_id;
+
+    -- Return the new user ID
+    RETURN _user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
