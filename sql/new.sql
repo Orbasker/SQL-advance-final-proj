@@ -1,3 +1,44 @@
+CREATE OR REPLACE FUNCTION create_user(
+    _username TEXT, 
+    _password TEXT, 
+    _permission TEXT
+) RETURNS UUID AS $$
+DECLARE 
+    _user_id UUID;
+    _log_id INT;
+BEGIN
+    -- Insert new user
+    INSERT INTO users (username, password)
+    VALUES (_username, crypt(_password, gen_salt('bf')))
+    RETURNING id INTO _user_id;
+
+    -- Assign initial permission
+    INSERT INTO permissions (user_id, permission_type)
+    VALUES (_user_id, _permission);
+
+    -- Log the action with JSON metadata
+    INSERT INTO logs (user_id, action, custom_fields)
+    VALUES (
+        _user_id,
+        'User Created',
+        json_build_object(
+            'action', 'create user',
+            'affectedUser', _user_id,
+            'username', _username,
+            'assignedPermission', _permission,
+            'timestamp', NOW()
+        )
+    ) RETURNING id INTO _log_id;
+
+    -- Return the new user ID
+    RETURN _user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- allow user registration from login
+GRANT EXECUTE ON FUNCTION create_user(TEXT, TEXT, TEXT) TO public;
+
 CREATE OR REPLACE FUNCTION public.change_password_new(
     _user_id UUID,
     _new_password TEXT,
@@ -19,7 +60,7 @@ BEGIN
     VALUES (
         _performed_by, 
         'Changed password of user ' || _user_id,
-        jsonb_build_object(
+        json_build_object(
             'action', 'change password',
             'affectedUser', _user_id,
             'performedBy', _performed_by,
@@ -60,7 +101,7 @@ BEGIN
     VALUES (
         _performed_by,
         'Changed permissions of user ' || _user_id || ' to ' || _new_permission,
-        jsonb_build_object(
+        json_build_object(
             'action', 'update permissions',
             'affectedUser', _user_id,
             'newPermission', _new_permission,
@@ -99,7 +140,7 @@ BEGIN
     VALUES (
         _performed_by,
         'Deleted user ' || _user_id,
-        jsonb_build_object(
+        json_build_object(
             'action', 'delete user',
             'affectedUser', _user_id,
             'performedBy', _performed_by,
@@ -112,39 +153,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION create_user(
-    _username TEXT, 
-    _password TEXT, 
-    _permission TEXT
-) RETURNS UUID AS $$
-DECLARE 
-    _user_id UUID;
-    _log_id INT;
-BEGIN
-    -- Insert new user
-    INSERT INTO users (username, password)
-    VALUES (_username, crypt(_password, gen_salt('bf')))
-    RETURNING id INTO _user_id;
-
-    -- Assign initial permission
-    INSERT INTO permissions (user_id, permission_type)
-    VALUES (_user_id, _permission);
-
-    -- Log the action with JSON metadata
-    INSERT INTO logs (user_id, action, custom_fields)
-    VALUES (
-        _user_id,
-        'User Created',
-        jsonb_build_object(
-            'action', 'create user',
-            'affectedUser', _user_id,
-            'username', _username,
-            'assignedPermission', _permission,
-            'timestamp', NOW()
-        )
-    ) RETURNING id INTO _log_id;
-
-    -- Return the new user ID
-    RETURN _user_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+SELECT id, custom_fields, 
+       json_build_object(
+           'user_id', COALESCE(user_id::TEXT, 'null'),
+           'action', COALESCE(action, 'no_data'),
+           'timestamp', COALESCE(timestamp::TEXT, 'null')
+       ) AS new_custom_fields
+FROM logs
+WHERE custom_fields IS NULL OR custom_fields::TEXT = '{}';
