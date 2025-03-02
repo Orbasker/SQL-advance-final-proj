@@ -149,7 +149,7 @@ export default function Dashboard() {
                 alert("✅ Password changed successfully!");
             }
         } else if (modalType === 'changePermission') {
-            if(newPermission != "read_only" || newPermission != "admin") {setNewPermission("read_only");}
+            if (newPermission != "read_only" || newPermission != "admin") { setNewPermission("read_only"); }
             const result = await changeUserPermission(selectedUser, newPermission, currentUserId);
             if (result.error) {
                 alert("🚨 Error: " + result.error);
@@ -163,7 +163,9 @@ export default function Dashboard() {
                 alert("🚨 Error: " + result.error);
             } else {
                 alert("✅ User deleted successfully!");
-                fetchUsers();
+                localStorage.removeItem("user");
+                router.push("/dashboard");
+
             }
         }
 

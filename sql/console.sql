@@ -159,13 +159,7 @@ BEGIN
         RETURN json_build_object('error', 'User not found');
     END IF;
 
-    -- Delete related permissions
-    DELETE FROM permissions WHERE user_id = _user_id;
-
-    -- Delete the user (logs will retain NULL references)
-    DELETE FROM users WHERE id = _user_id;
-
-    -- Log the action
+     -- Log the action
     INSERT INTO public.logs (user_id, action, custom_fields)
     VALUES (
         _performed_by,
@@ -177,6 +171,13 @@ BEGIN
             'timestamp', NOW()
         )
     ) RETURNING id INTO _log_id;
+
+    -- Delete related permissions
+    DELETE FROM permissions WHERE user_id = _user_id;
+
+    -- Delete the user (logs will retain NULL references)
+    DELETE FROM users WHERE id = _user_id;
+
 
     -- Return success message
     RETURN json_build_object('success', 'User deleted successfully');
