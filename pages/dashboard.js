@@ -18,6 +18,7 @@ export default function Dashboard() {
     const [newPassword, setNewPassword] = useState("");
     const [newPermission, setNewPermission] = useState("read_only");
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [currentIsAdmin, setCurrentIsAdmin] = useState("false");
 
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
@@ -43,8 +44,10 @@ export default function Dashboard() {
 
             if (parsedSession.permission === "admin") {
                 fetchUsers(); // Admin fetches all users
+                setCurrentIsAdmin("true");
             } else {
                 fetchUserData(parsedSession.username); // Read-only user fetches own data
+                setCurrentIsAdmin("false");
             }
         } catch (error) {
             console.error("🚨 Error parsing user data:", error);
@@ -163,9 +166,13 @@ export default function Dashboard() {
                 alert("🚨 Error: " + result.error);
             } else {
                 alert("✅ User deleted successfully!");
-                localStorage.removeItem("user");
+                if(currentIsAdmin == "true"){
+                    fetchUsers();
+                }
+                else { 
+                    localStorage.removeItem("user");
+                }
                 router.push("/dashboard");
-
             }
         }
 
