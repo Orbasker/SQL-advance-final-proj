@@ -1,4 +1,6 @@
-import { useState } from "react";
+"use client"; // Ensures this is a client component
+
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
 export default function Navbar() {
@@ -6,25 +8,34 @@ export default function Navbar() {
     const [showForm, setShowForm] = useState(false);
     const [formData, setFormData] = useState({ username: "", password: "", permission: "read_only" });
     const [error, setError] = useState(null);
+    const [session, setSession] = useState(null);
+
+    // Fetch user session from localStorage on client-side
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            const storedUser = localStorage.getItem("user");
+            setSession(storedUser ? JSON.parse(storedUser) : null);
+        }
+    }, []);
 
     // Handle logout
     const handleLogout = () => {
-        localStorage.removeItem("user");  // Remove user from storage
-        router.push("/login");  // Redirect to login
+        if (typeof window !== "undefined") {
+            localStorage.removeItem("user"); // Remove user from storage
+        }
+        router.push("/login"); // Redirect to login
     };
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
         setError(null);
 
-        const storedUser = localStorage.getItem("user");
-        if (!storedUser) {
+        if (!session) {
             console.error("🚨 No user found in localStorage.");
             return;
         }
 
-        const currentUser = JSON.parse(storedUser);
-        const currentUserId = currentUser?.userId;
+        const currentUserId = session?.userId;
 
         if (!formData.username || !formData.password || !currentUserId) {
             setError("All fields and admin ID are required!");
@@ -35,7 +46,7 @@ export default function Navbar() {
             username: formData.username,
             password: formData.password,
             permission: formData.permission || "read_only",
-            performed_by: currentUserId,  // ✅ Logs who created the user
+            performed_by: currentUserId, // ✅ Logs who created the user
         };
 
         const response = await fetch("/api/auth/register", {
@@ -54,10 +65,6 @@ export default function Navbar() {
         setFormData({ username: "", password: "", permission: "read_only" });
         alert("✅ User created successfully!");
     };
-
-    // Fetch user session from local storage
-    const storedUser = localStorage.getItem("user");
-    const session = storedUser ? JSON.parse(storedUser) : null;
 
     return (
         <nav className="bg-blue-600 text-white p-4 flex justify-between items-center">
